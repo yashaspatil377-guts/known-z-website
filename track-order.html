@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Your Order — Known Z</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0b0a;--surface:#141412;--surface-2:#1c1c19;--text:#f2f0ea;--muted:#928f86;
+    --gold:#c7a465;--line:rgba(242,240,234,0.12);--line-strong:rgba(242,240,234,0.22);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;min-height:100vh;}
+  .wrap{max-width:560px;margin:0 auto;padding:0 24px;}
+  header{padding:26px 0;border-bottom:1px solid var(--line);margin-bottom:60px;}
+  .header-inner{max-width:560px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center;}
+  .logo{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:20px;}
+  .logo span{color:var(--gold);}
+  .back-link{font-size:13px;color:var(--muted);text-decoration:none;}
+  .back-link:hover{color:var(--text);}
+
+  h1{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:clamp(32px,5vw,44px);margin-bottom:10px;}
+  .subtitle{color:var(--muted);font-size:14px;margin-bottom:40px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  .field input{
+    width:100%;background:var(--surface);border:1px solid var(--line);color:var(--text);
+    padding:14px 16px;font-size:14px;outline:none;
+  }
+  .field input:focus{border-color:var(--gold);}
+
+  .btn{
+    width:100%;padding:15px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;
+    background:var(--gold);border:none;color:#0b0b0a;cursor:pointer;margin-top:8px;
+  }
+  .btn:hover{opacity:0.88;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+  .error-msg{
+    color:#e08a72;font-size:13px;margin-top:14px;padding:12px 16px;
+    background:rgba(224,138,114,0.08);border:1px solid rgba(224,138,114,0.25);
+    display:none;
+  }
+  .error-msg.show{display:block;}
+
+  #result{display:none;margin-top:50px;}
+  .result-order-id{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:13px;margin-bottom:6px;}
+  .result-title{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:24px;margin-bottom:30px;}
+
+  .stepper{display:flex;justify-content:space-between;margin-bottom:40px;position:relative;}
+  .stepper::before{
+    content:'';position:absolute;top:11px;left:20px;right:20px;height:1px;background:var(--line-strong);z-index:0;
+  }
+  .step{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:10px;flex:1;}
+  .step-dot{width:22px;height:22px;border-radius:50%;background:var(--surface);border:1px solid var(--line-strong);}
+  .step.done .step-dot{background:var(--gold);border-color:var(--gold);}
+  .step-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);text-align:center;}
+  .step.done .step-label{color:var(--text);}
+
+  .order-items{border-top:1px solid var(--line);padding-top:24px;}
+  .order-item{display:flex;justify-content:space-between;font-size:13px;color:#d8d5cc;margin-bottom:12px;}
+  .order-total{display:flex;justify-content:space-between;font-size:15px;font-weight:600;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);}
+  .order-total span:last-child{color:var(--gold);font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">KNOWN <span>Z</span></div>
+    <a class="back-link" href="index.html">← Back to Store</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>Track Your Order</h1>
+  <p class="subtitle">Enter your Order ID and the email you used at checkout.</p>
+
+  <form id="trackForm">
+    <div class="field">
+      <label>Order ID</label>
+      <input type="text" id="orderId" placeholder="KZ-1001" required>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@example.com" required>
+    </div>
+    <button type="submit" class="btn" id="trackBtn">Track Order</button>
+    <div class="error-msg" id="errorMsg"></div>
+  </form>
+
+  <div id="result">
+    <div class="result-order-id" id="resultOrderId"></div>
+    <div class="result-title" id="resultStatus"></div>
+
+    <div class="stepper" id="stepper">
+      <div class="step" data-status="Processing">
+        <div class="step-dot"></div>
+        <div class="step-label">Processing</div>
+      </div>
+      <div class="step" data-status="Shipped">
+        <div class="step-dot"></div>
+        <div class="step-label">Shipped</div>
+      </div>
+      <div class="step" data-status="Delivered">
+        <div class="step-dot"></div>
+        <div class="step-label">Delivered</div>
+      </div>
+    </div>
+
+    <div class="order-items" id="orderItems"></div>
+  </div>
+</div>
+
+<script>
+// Set this to your live backend URL
+const BACKEND_URL = 'https://knownz-api.vercel.app';
+
+const form = document.getElementById('trackForm');
+const trackBtn = document.getElementById('trackBtn');
+const errorMsg = document.getElementById('errorMsg');
+const result = document.getElementById('result');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorMsg.classList.remove('show');
+  result.style.display = 'none';
+
+  const orderId = document.getElementById('orderId').value.trim();
+  const email = document.getElementById('email').value.trim();
+
+  trackBtn.disabled = true;
+  trackBtn.textContent = 'Looking up...';
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/order-status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, email })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorMsg.textContent = data.error === 'Order not found'
+        ? "We couldn't find an order matching that ID and email. Double-check both and try again."
+        : 'Something went wrong. Please try again.';
+      errorMsg.classList.add('show');
+      return;
+    }
+
+    renderResult(data);
+  } catch (err) {
+    console.error(err);
+    errorMsg.textContent = 'Something went wrong. Please try again.';
+    errorMsg.classList.add('show');
+  } finally {
+    trackBtn.disabled = false;
+    trackBtn.textContent = 'Track Order';
+  }
+});
+
+function renderResult(order){
+  document.getElementById('resultOrderId').textContent = order.orderId;
+  document.getElementById('resultStatus').textContent = order.status;
+
+  const statusOrder = ['Processing', 'Shipped', 'Delivered'];
+  const currentIndex = statusOrder.indexOf(order.status);
+
+  document.querySelectorAll('.step').forEach((step, i) => {
+    step.classList.toggle('done', i <= currentIndex);
+  });
+
+  const itemsHtml = order.items.map(i =>
+    `<div class="order-item"><span>${i.qty} × ${i.name} (${i.size})</span><span>₹${i.price * i.qty}</span></div>`
+  ).join('');
+
+  document.getElementById('orderItems').innerHTML = itemsHtml + `
+    <div class="order-total"><span>Total</span><span>₹${order.amount}</span></div>
+  `;
+
+  result.style.display = 'block';
+}
+</script>
+</body>
+</html>
