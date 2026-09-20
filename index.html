@@ -4041,7 +4041,7 @@
 
 <!-- ============ HERO ============ -->
 <section class="hero" id="home">
-  <div class="hero-bg"></div>
+  <div class="hero-bg" id="heroLiveBackground"></div>
   <div class="aura-field" id="auraField" aria-hidden="true"></div>
   <div class="anime-character hero-guardian" data-anime-depth="0.07" aria-hidden="true">
     <span class="anime-character-code">UNIT / 01 — GUARDIAN</span>
@@ -4055,11 +4055,11 @@
     <span id="auraHeroStatus">STATUS / REBEL</span>
   </div>
   <div class="hero-content">
-    <div class="hero-eyebrow"><span class="tag">Episode 01 / Mythos</span></div>
-    <h1 class="hero-title display"><span>Known</span><b>Z</b></h1>
-    <p class="hero-sub"><span>Wear your aura.</span> Built beyond the ordinary.</p>
+    <div class="hero-eyebrow"><span class="tag" id="heroLiveEyebrow">Episode 01 / Mythos</span></div>
+    <h1 class="hero-title display"><span id="heroLivePrimary">Known</span><b id="heroLiveAccent">Z</b></h1>
+    <p class="hero-sub"><span id="heroLiveSubtitleStrong">Wear your aura.</span> <i id="heroLiveSubtitle" style="font-style:inherit">Built beyond the ordinary.</i></p>
     <div class="hero-actions">
-      <a href="#shop" class="hero-cta btn filled"><span>Enter the drop</span><b aria-hidden="true">↘</b></a>
+      <a href="#shop" class="hero-cta btn filled" id="heroLiveCta"><span id="heroLiveCtaLabel">Enter the drop</span><b aria-hidden="true">↘</b></a>
       <button class="hero-aura-trigger" id="auraHeroTrigger" type="button" aria-controls="auraConsole" aria-haspopup="dialog"><i aria-hidden="true"></i><span>Tune aura</span><b id="heroAuraName">Rebel</b></button>
     </div>
   </div>
@@ -4156,7 +4156,7 @@
   <div class="wrap">
     <div class="about-grid">
       <div class="about-media reveal">
-        <img src="assets/about.webp" alt="Known Z" width="1086" height="1448" loading="lazy" decoding="async">
+        <img src="assets/about.webp" id="aboutLiveImage" alt="Known Z" width="1086" height="1448" loading="lazy" decoding="async">
       </div>
       <div class="reveal">
         <span class="tag about-tag">Origin / Known Z</span>
@@ -4660,12 +4660,24 @@ function getRequestedProductId(){
   catch (error) { return legacyHash[1]; }
 }
 
-const COLLECTIONS = [
+let COLLECTIONS = [
   { name: 'Aura', img: 'assets/editorial.webp', status: 'live' },
   { name: 'Garuda', img: 'assets/garuda-back.webp', status: 'live' },
   { name: 'Descent', img: 'assets/descent-collection.webp', status: 'live' },
   { name: 'Bharat', img: 'assets/bharat-back.webp', status: 'live' }
 ];
+
+let GALLERY_IMGS = [
+  'assets/hero.webp','assets/garuda-front.webp','assets/descent-collection.webp',
+  'assets/bharat-back.webp','assets/editorial.webp','assets/descent-front.webp',
+  'assets/about.webp','assets/aura-back.webp','assets/bharat-front.webp'
+];
+
+const DEFAULT_SITE_CONTENT = {
+  hero:{image:'assets/hero.webp',mobileImage:'',eyebrow:'Episode 01 / Mythos',titlePrimary:'Known',titleAccent:'Z',subtitleStrong:'Wear your aura.',subtitle:'Built beyond the ordinary.',ctaLabel:'Enter the drop',ctaHref:'#shop'},
+  gallery:[...GALLERY_IMGS],collections:COLLECTIONS.map(item=>({...item})),aboutImage:'assets/about.webp'
+};
+let SITE_CONTENT={...DEFAULT_SITE_CONTENT,hero:{...DEFAULT_SITE_CONTENT.hero},gallery:[...DEFAULT_SITE_CONTENT.gallery],collections:DEFAULT_SITE_CONTENT.collections.map(item=>({...item}))};
 
 /* ================= LOAD PRODUCTS (live, with fallback) ================= */
 const catalogNotice = document.getElementById('catalogNotice');
@@ -4681,6 +4693,30 @@ function showCatalogNotice(message, allowRetry = false){
     catalogNotice.appendChild(retryButton);
   }
 }
+
+function mergeLiveSiteContent(content){
+  const source=content&&typeof content==='object'?content:{};
+  const hasGallery=Object.prototype.hasOwnProperty.call(source,'gallery')&&Array.isArray(source.gallery);
+  const hasCollections=Object.prototype.hasOwnProperty.call(source,'collections')&&Array.isArray(source.collections);
+  return {
+    hero:{...DEFAULT_SITE_CONTENT.hero,...(source.hero||{})},
+    gallery:hasGallery?source.gallery.map(String).filter(Boolean):[...DEFAULT_SITE_CONTENT.gallery],
+    collections:hasCollections
+      ?source.collections.map(item=>({name:String(item.name||'Collection'),img:String(item.img||''),status:item.status==='coming'?'coming':'live',productId:String(item.productId||'')})).filter(item=>item.img)
+      :DEFAULT_SITE_CONTENT.collections.map(item=>({...item})),
+    aboutImage:String(source.aboutImage||DEFAULT_SITE_CONTENT.aboutImage)
+  };
+}
+function safeLiveHref(value){const href=String(value||'');return /^(#|\/|https:\/\/)/i.test(href)?href:'#shop';}
+function applyHeroArtwork(){const hero=SITE_CONTENT.hero,mobile=matchMedia('(max-width: 700px)').matches,source=mobile&&hero.mobileImage?hero.mobileImage:hero.image,background=document.getElementById('heroLiveBackground');if(background&&source)background.style.backgroundImage=`url(${JSON.stringify(source)})`;}
+function applyLiveSiteContent(){
+  const hero=SITE_CONTENT.hero,map={heroLiveEyebrow:hero.eyebrow,heroLivePrimary:hero.titlePrimary,heroLiveAccent:hero.titleAccent,heroLiveSubtitleStrong:hero.subtitleStrong,heroLiveSubtitle:hero.subtitle,heroLiveCtaLabel:hero.ctaLabel};
+  Object.entries(map).forEach(([id,value])=>{const node=document.getElementById(id);if(node&&value)node.textContent=value;});
+  const cta=document.getElementById('heroLiveCta'),about=document.getElementById('aboutLiveImage');if(cta)cta.href=safeLiveHref(hero.ctaHref);if(about&&SITE_CONTENT.aboutImage)about.src=SITE_CONTENT.aboutImage;
+  COLLECTIONS=SITE_CONTENT.collections.map(item=>({...item}));GALLERY_IMGS=[...SITE_CONTENT.gallery];applyHeroArtwork();renderCollections();renderGallery();
+}
+async function loadSiteContent(){try{const url=new URL(`${BACKEND_URL}/api/site-content`);url.searchParams.set('_',Date.now().toString());const response=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});if(!response.ok)throw new Error(`Site content request failed (${response.status})`);const data=await response.json();if(data&&data.content)SITE_CONTENT=mergeLiveSiteContent(data.content);}catch(error){console.warn('Could not refresh live hero and gallery content; using built-in visuals.',error);}applyLiveSiteContent();}
+const liveHeroMedia=matchMedia('(max-width: 700px)');if(liveHeroMedia.addEventListener)liveHeroMedia.addEventListener('change',applyHeroArtwork);else if(liveHeroMedia.addListener)liveHeroMedia.addListener(applyHeroArtwork);
 
 async function loadProducts(){
   catalogNotice.hidden = true;
@@ -5142,29 +5178,16 @@ document.addEventListener('keydown', event => {
 
 /* ================= RENDER COLLECTIONS ================= */
 const collectionGrid = document.getElementById('collectionGrid');
-collectionGrid.innerHTML = COLLECTIONS.map(c => {
-  const productId = c.productId || c.name.toLowerCase().replace(/\s+/g, '-');
-  const isComingSoon = c.status === 'coming';
-  const clickAction = isComingSoon
-    ? "event.preventDefault();toast('Coming soon')"
-    : `event.preventDefault();openProductPage('${productId}')`;
-  return `
-    <a href="${isComingSoon ? '#collections' : buildProductUrl(productId)}" class="collection-card ${isComingSoon ? 'coming' : ''}" aria-label="${isComingSoon ? `${c.name} coming soon` : `Shop ${c.name}` }" onclick="${clickAction}">
-      <img src="${c.img}" alt="${c.name}" ${imageDimensionAttributes(c.img)} loading="lazy" decoding="async">
-      <div class="collection-body">
-        <div class="collection-name display">${c.name}</div>
-        <div class="collection-cta">${isComingSoon ? 'Coming Soon' : 'Shop Now'} →</div>
-      </div>
-    </a>`;
-}).join('');
+function escapeLiveMarkup(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function renderCollections(){
+  collectionGrid.innerHTML=COLLECTIONS.map(c=>{const productId=c.productId||c.name.toLowerCase().replace(/\s+/g,'-'),coming=c.status==='coming',name=escapeLiveMarkup(c.name),image=escapeLiveMarkup(c.img);return `<a href="${coming?'#collections':escapeLiveMarkup(buildProductUrl(productId))}" class="collection-card ${coming?'coming':''}" aria-label="${coming?`${name} coming soon`:`Shop ${name}`}" data-collection-product="${escapeLiveMarkup(productId)}" data-collection-coming="${coming?'true':'false'}"><img src="${image}" alt="${name}" ${imageDimensionAttributes(c.img)} loading="lazy" decoding="async"><div class="collection-body"><div class="collection-name display">${name}</div><div class="collection-cta">${coming?'Coming Soon':'Shop Now'} →</div></div></a>`;}).join('');
+  collectionGrid.querySelectorAll('[data-collection-product]').forEach(card=>card.addEventListener('click',event=>{event.preventDefault();card.dataset.collectionComing==='true'?toast('Coming soon'):openProductPage(card.dataset.collectionProduct);}));
+}
 
 /* ================= RENDER GALLERY (mixed, no duplicates adjacent) ================= */
-const galleryImgs = [
-  'assets/hero.webp','assets/garuda-front.webp','assets/descent-collection.webp',
-  'assets/bharat-back.webp','assets/editorial.webp','assets/descent-front.webp',
-  'assets/about.webp','assets/aura-back.webp','assets/bharat-front.webp'
-];
-document.getElementById('galleryGrid').innerHTML = galleryImgs.map((src, index) => `<img src="${src}" alt="Known Z streetwear gallery image ${index + 1}" ${imageDimensionAttributes(src)} loading="lazy" decoding="async">`).join('');
+const galleryGrid=document.getElementById('galleryGrid');
+function renderGallery(){galleryGrid.innerHTML=GALLERY_IMGS.map((src,index)=>`<img src="${escapeLiveMarkup(src)}" alt="Known Z streetwear gallery image ${index+1}" ${imageDimensionAttributes(src)} loading="lazy" decoding="async">`).join('');}
+renderCollections();renderGallery();
 
 /* ================= SAVED CART & WISHLIST ================= */
 const CART_STORAGE_KEY = 'knownz_cart_v1';
@@ -6085,7 +6108,7 @@ document.getElementById('successCloseBtn').addEventListener('click', () => {
 
 async function initializeKnownZ(){
   renderCart();
-  await loadProducts();
+  await Promise.all([loadProducts(),loadSiteContent()]);
 
   const requestedProductId = getRequestedProductId();
   const initialState = history.state && typeof history.state === 'object' ? history.state : {};
