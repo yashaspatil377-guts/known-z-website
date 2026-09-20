@@ -4317,11 +4317,11 @@
     <div class="pdp-gallery">
       <div class="pdp-gallery-track" id="pdpGalleryTrack" tabindex="0" role="region" aria-label="Product images. Swipe left or right to change view">
         <figure class="pdp-image-wrap active" data-pdp-view="front">
-          <img id="pdpFrontImage" src="" alt="Product front view" loading="eager" decoding="async">
+          <img id="pdpFrontImage" alt="Product front view" loading="eager" decoding="async">
           <figcaption class="pdp-image-label">Front</figcaption>
         </figure>
         <figure class="pdp-image-wrap" data-pdp-view="back">
-          <img id="pdpBackImage" src="" alt="Product back view" loading="eager" decoding="async">
+          <img id="pdpBackImage" alt="Product back view" loading="eager" decoding="async">
           <figcaption class="pdp-image-label">Back</figcaption>
         </figure>
       </div>
@@ -4343,8 +4343,8 @@
       <div class="pdp-mobile-choices">
         <p class="pdp-color"><strong>Selected color:</strong> <span id="pdpColor">As shown</span></p>
         <div class="pdp-thumbnails" aria-label="Choose product view">
-          <button class="pdp-thumbnail active" type="button" data-pdp-thumbnail="front" onclick="selectProductView('front',this)" aria-label="Show front view"><img id="pdpFrontThumbnail" src="" alt="" decoding="async"></button>
-          <button class="pdp-thumbnail" type="button" data-pdp-thumbnail="back" onclick="selectProductView('back',this)" aria-label="Show back view"><img id="pdpBackThumbnail" src="" alt="" decoding="async"></button>
+          <button class="pdp-thumbnail active" type="button" data-pdp-thumbnail="front" onclick="selectProductView('front',this)" aria-label="Show front view"><img id="pdpFrontThumbnail" alt="" decoding="async"></button>
+          <button class="pdp-thumbnail" type="button" data-pdp-thumbnail="back" onclick="selectProductView('back',this)" aria-label="Show back view"><img id="pdpBackThumbnail" alt="" decoding="async"></button>
         </div>
       </div>
 
@@ -4913,12 +4913,10 @@ function openProductPage(productId, options = {}){
 
   const frontImage = document.getElementById('pdpFrontImage');
   const backImage = document.getElementById('pdpBackImage');
-  frontImage.src = product.front;
-  frontImage.alt = `${product.name} front view`;
-  backImage.src = product.back || product.front;
-  backImage.alt = `${product.name} back view`;
-  document.getElementById('pdpFrontThumbnail').src = product.front;
-  document.getElementById('pdpBackThumbnail').src = product.back || product.front;
+  setProductImage(frontImage, product.front, `${product.name} front view`);
+  setProductImage(backImage, product.back || product.front, `${product.name} back view`);
+  setProductImage(document.getElementById('pdpFrontThumbnail'), product.front, '');
+  setProductImage(document.getElementById('pdpBackThumbnail'), product.back || product.front, '');
   document.getElementById('pdpColor').textContent = product.color || 'As shown';
   selectProductView('front', document.querySelector('[data-pdp-thumbnail="front"]'));
 
@@ -4976,6 +4974,13 @@ function openProductPage(productId, options = {}){
 
   requestDeliveryLocation(false);
   if (focusBackButton) document.getElementById('pdpBack').focus({ preventScroll:true });
+}
+
+function setProductImage(image, source, alt){
+  image.classList.remove('image-load-error');
+  delete image.dataset.errorHandled;
+  image.alt = alt;
+  image.src = source;
 }
 
 function selectProductView(view, button = null, options = {}){
